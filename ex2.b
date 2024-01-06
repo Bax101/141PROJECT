@@ -1,5 +1,6 @@
 INTEGER x = 1
-print(x)
+DECIMAL y = 2
+print(y + x)
 
 IF (TRUE) THEN
     print("Hello")

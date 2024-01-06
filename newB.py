@@ -131,6 +131,7 @@ class Position:
 #######################################
 
 T_NUM         = 'NUM'
+T_FLOAT       = 'FLOAT'
 T_STRING      = 'STRING'
 
 T_PLUS     	  = 'PLUS'
@@ -169,6 +170,7 @@ T_EOF         = 'EOF'
 
 KEYWORDS = [
 	'INTEGER',
+	'DECIMAL',
 	'and',
 	'or',
 	'not',
@@ -316,7 +318,7 @@ class Lexer:
 		if dot_count == 0:
 			return Token(T_NUM, int(num_str), pos_start, self.pos)
 		else:
-			return Token(T_NUM, float(num_str), pos_start, self.pos)
+			return Token(T_FLOAT, float(num_str), pos_start, self.pos)
 
 	def make_div(self):
 		tok_type = T_DIV
@@ -444,6 +446,16 @@ class Lexer:
 #######################################
 
 class NumberNode:
+	def __init__(self, tok):
+		self.tok = tok
+
+		self.pos_start = self.tok.pos_start
+		self.pos_end = self.tok.pos_end
+
+	def __repr__(self):
+		return f'{self.tok}'
+	
+class FloatNode:
 	def __init__(self, tok):
 		self.tok = tok
 
@@ -714,7 +726,7 @@ class Parser:
 		if res.error: 
 			return res.failure(InvalidSyntaxError(
 				self.current_tok.pos_start, self.current_tok.pos_end,
-				"Expected 'RETURN', 'CONTINUE', 'BREAK', 'INTEGER', 'IF', 'FOR', 'WHILE', 'FUNCTION', num, identifier, '+', '-', '(', '[' or 'not'"
+				"Expected 'RETURN', 'CONTINUE', 'BREAK', 'INTEGER', 'DECIMAL', 'IF', 'FOR', 'WHILE', 'FUNCTION', num, identifier, '+', '-', '(', '[' or 'not'"
 			))
 		
 		return res.success(expr)
@@ -741,7 +753,7 @@ class Parser:
 			if res.error:
 				return res.failure(InvalidSyntaxError(
 					self.current_tok.pos_start, self.current_tok.pos_end,
-					"Expected ']', 'INTEGER', 'IF', 'FOR', 'WHILE', 'FUNCTION', num, identifier, '+', '-', '(', '[' or 'not'"
+					"Expected ']', 'INTEGER', 'DECIMAL', 'IF', 'FOR', 'WHILE', 'FUNCTION', num, identifier, '+', '-', '(', '[' or 'not'"
 				))
 
 			while self.current_tok.type == T_COMMA:
@@ -1132,7 +1144,7 @@ class Parser:
 				if res.error:
 					return res.failure(InvalidSyntaxError(
 						self.current_tok.pos_start, self.current_tok.pos_end,
-						"Expected ')', 'INTEGER', 'IF', 'FOR', 'WHILE', 'FUNCTION', num, identifier, '+', '-', '(', '[' or 'not'"
+						"Expected ')', 'INTEGER', 'DECIMAL', 'IF', 'FOR', 'WHILE', 'FUNCTION', num, identifier, '+', '-', '(', '[' or 'not'"
 					))
 
 				while self.current_tok.type == T_COMMA:
@@ -1161,6 +1173,11 @@ class Parser:
 			res.register_advancement()
 			self.advance()
 			return res.success(NumberNode(tok))
+
+		if tok.type == T_FLOAT:
+			res.register_advancement()
+			self.advance()
+			return res.success(FloatNode(tok))
 		
 		if tok.type == T_STRING:
 			res.register_advancement()
@@ -1264,6 +1281,7 @@ class Parser:
 	def expr(self):
 		res = ParseResult()
 
+		############INTEGER
 		if self.current_tok.matches(T_KEYWORD, 'INTEGER'):
 			res.register_advancement()
 			self.advance()
@@ -1287,7 +1305,36 @@ class Parser:
 			res.register_advancement()
 			self.advance()
 			expr = res.register(self.expr())
-			if res.error: return res
+			print(type(expr))
+			if res.error or type(expr) != NumberNode: return res
+			return res.success(VarAssignNode(var_name, expr))
+		
+		############Decimal
+		if self.current_tok.matches(T_KEYWORD, 'DECIMAL'):
+			res.register_advancement()
+			self.advance()
+
+			if self.current_tok.type != T_IDENTIFIER:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected identifier"
+				))
+
+			var_name = self.current_tok
+			res.register_advancement()
+			self.advance()
+
+			if self.current_tok.type != T_EQ:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected '='"
+				))
+
+			res.register_advancement()
+			self.advance()
+			expr = res.register(self.expr())
+			print(type(expr))
+			if res.error or type(expr) != FloatNode: return res
 			return res.success(VarAssignNode(var_name, expr))
 
 		node = res.register(self.bin_op(self.comp_expr, ((T_KEYWORD, 'and'),(T_KEYWORD, 'or'))))
@@ -1295,7 +1342,7 @@ class Parser:
 		if res.error:
 			return res.failure(InvalidSyntaxError(
 				self.current_tok.pos_start, self.current_tok.pos_end,
-				"Expected 'INTEGER', 'IF', 'FOR', 'WHILE', 'FUNCTION', num, identifier, '+', '-', '(', '[' or 'not'"
+				"Expected 'INTEGER', 'DECIMAL', 'IF', 'FOR', 'WHILE', 'FUNCTION', num, identifier, '+', '-', '(', '[' or 'not'"
 			))
 
 		return res.success(node)
@@ -2149,6 +2196,11 @@ class Interpreter:
 	###################################
 
 	def visit_NumberNode(self, node, context):
+		return RTResult().success(
+			Number(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
+		)
+
+	def visit_FloatNode(self, node, context):
 		return RTResult().success(
 			Number(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
 		)
