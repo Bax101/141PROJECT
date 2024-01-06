@@ -133,6 +133,8 @@ class Position:
 T_NUM         = 'NUM'
 T_FLOAT       = 'FLOAT'
 T_STRING      = 'STRING'
+T_CHAR        = 'CHARACTER'
+
 
 T_PLUS     	  = 'PLUS'
 T_MINUS    	  = 'MINUS'
@@ -172,6 +174,7 @@ KEYWORDS = [
 	'INTEGER',
 	'DECIMAL',
 	'WORD',
+	'CHARACTER',
 	'and',
 	'or',
 	'not',
@@ -419,7 +422,6 @@ class Lexer:
 			'r': '\r',
 			'-': '\n\t'
 		}
-
 		while self.current_char != None and (self.current_char != '"' or escape_character):
 			if escape_character:
 				string_value += escape_characters.get(self.current_char, self.current_char)
@@ -432,6 +434,8 @@ class Lexer:
 			self.advance()
 		
 		self.advance()
+		print(string_value.len())
+		if string_value.len == 1: return Token(T_CHAR, string_value, pos_start, self.pos)
 		return Token(T_STRING, string_value, pos_start, self.pos)
 	
 	def skip_comment(self):
@@ -467,6 +471,16 @@ class FloatNode:
 		return f'{self.tok}'
 
 class StringNode:
+	def __init__(self, tok):
+		self.tok = tok
+
+		self.pos_start = self.tok.pos_start
+		self.pos_end = self.tok.pos_end
+
+	def __repr__(self):
+		return f'{self.tok}'
+	
+class CharNode:
 	def __init__(self, tok):
 		self.tok = tok
 
@@ -1184,6 +1198,11 @@ class Parser:
 			res.register_advancement()
 			self.advance()
 			return res.success(StringNode(tok))
+		
+		if tok.type == T_CHAR:
+			res.register_advancement()
+			self.advance()
+			return res.success(CharNode(tok))
 
 		elif tok.type == T_IDENTIFIER:
 			res.register_advancement()
@@ -1364,6 +1383,34 @@ class Parser:
 			expr = res.register(self.expr())
 			print(type(expr))
 			if res.error or type(expr) != StringNode: return res
+			return res.success(VarAssignNode(var_name, expr))
+
+		########## Character
+		if self.current_tok.matches(T_KEYWORD, 'CHARACTER'):
+			res.register_advancement()
+			self.advance()
+
+			if self.current_tok.type != T_IDENTIFIER:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected identifier"
+				))
+
+			var_name = self.current_tok
+			res.register_advancement()
+			self.advance()
+
+			if self.current_tok.type != T_EQ:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected '='"
+				))
+
+			res.register_advancement()
+			self.advance()
+			expr = res.register(self.expr())
+			print(type(expr))
+			if res.error or type(expr) != CharNode: return res
 			return res.success(VarAssignNode(var_name, expr))
 
 		node = res.register(self.bin_op(self.comp_expr, ((T_KEYWORD, 'and'),(T_KEYWORD, 'or'))))
@@ -2235,6 +2282,11 @@ class Interpreter:
 		)
 	
 	def visit_StringNode(self, node, context):
+		return RTResult().success(
+			String(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
+		)
+
+	def visit_CharNode(self, node, context):
 		return RTResult().success(
 			String(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
 		)
