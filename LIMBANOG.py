@@ -2057,12 +2057,12 @@ class BuiltInFunction(BaseFunction):
 		
 		fn = fn.value
 		try:
-			if fn.endswith('.LIMBS'):
+			if fn.endswith('.b'):
 				script = open(fn, 'r').read()
 			else:
 				return RTResult().failure(RTError(
 					self.pos_start, self.pos_end,
-					f"{fn} is not a .LIMBS file so it isn't a LIMBANOG Script",
+					f"{fn} is not a .b file so it isn't a newB Script",
 					exec_ctx
 				))
 		except Exception as e:
@@ -2445,7 +2445,7 @@ def main():
 	status = True
 
 	while status:
-		text = input('LIMBANOG > ')
+		text = input('newB > ')
 		if text.strip() == '':
 			continue
 
