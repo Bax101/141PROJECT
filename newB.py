@@ -1336,6 +1336,34 @@ class Parser:
 			print(type(expr))
 			if res.error or type(expr) != FloatNode: return res
 			return res.success(VarAssignNode(var_name, expr))
+		
+		############Word
+		if self.current_tok.matches(T_KEYWORD, 'WORD'):
+			res.register_advancement()
+			self.advance()
+
+			if self.current_tok.type != T_IDENTIFIER:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected identifier"
+				))
+
+			var_name = self.current_tok
+			res.register_advancement()
+			self.advance()
+
+			if self.current_tok.type != T_EQ:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected '='"
+				))
+
+			res.register_advancement()
+			self.advance()
+			expr = res.register(self.expr())
+			print(type(expr))
+			if res.error or type(expr) != StringNode: return res
+			return res.success(VarAssignNode(var_name, expr))
 
 		node = res.register(self.bin_op(self.comp_expr, ((T_KEYWORD, 'and'),(T_KEYWORD, 'or'))))
 
