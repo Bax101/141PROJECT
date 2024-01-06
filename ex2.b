@@ -1,7 +1,5 @@
 INTEGER x = 1
-DECIMAL y = 2
-print(y + x)
+DECIMAL y = 2.0
+WORD z = "HELLO"
+print(z + x + y)
 
-IF (TRUE) THEN
-    print("Hello")
-end

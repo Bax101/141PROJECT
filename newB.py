@@ -171,6 +171,7 @@ T_EOF         = 'EOF'
 KEYWORDS = [
 	'INTEGER',
 	'DECIMAL',
+	'WORD',
 	'and',
 	'or',
 	'not',
