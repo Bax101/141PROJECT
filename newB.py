@@ -434,8 +434,8 @@ class Lexer:
 			self.advance()
 		
 		self.advance()
-		print(string_value.len())
-		if string_value.len == 1: return Token(T_CHAR, string_value, pos_start, self.pos)
+		print(len(string_value))
+		if len(string_value) == 1: return Token(T_CHAR, string_value, pos_start, self.pos)
 		return Token(T_STRING, string_value, pos_start, self.pos)
 	
 	def skip_comment(self):

@@ -1,2 +1,3 @@
-IF 5=5 { ELSE 7
+INTEGER x = 5
+print(x)
 
