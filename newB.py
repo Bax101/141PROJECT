@@ -1592,10 +1592,16 @@ class Value:
 		return None, self.illegal_operation(other)
 
 	def get_comparison_eq(self, other):
-		return None, self.illegal_operation(other)
+		if isinstance(other, Value) and not isinstance(other, Number):
+			return Number(int(self.value == other.value)).set_context(self.context), None
+		else:
+			return None, Value.illegal_operation(self, other)
 
 	def get_comparison_ne(self, other):
-		return None, self.illegal_operation(other)
+		if isinstance(other, Value) and not isinstance(other, Number):
+			return Number(int(self.value != other.value)).set_context(self.context), None
+		else:
+			return None, Value.illegal_operation(self, other)
 
 	def get_comparison_lt(self, other):
 		return None, self.illegal_operation(other)
@@ -1710,7 +1716,7 @@ class Number(Value):
 			return None, Value.illegal_operation(self, other)
 
 	def get_comparison_eq(self, other):
-		if isinstance(other, Number):
+		if isinstance(other, (Number or String)):
 			return Number(int(self.value == other.value)).set_context(self.context), None
 		else:
 			return None, Value.illegal_operation(self, other)
