@@ -148,8 +148,6 @@ T_LPAREN   	  = 'LPAREN'
 T_RPAREN   	  = 'RPAREN'
 T_LSQUARE     = 'LSQUARE'
 T_RSQUARE     = 'RSQUARE'
-T_LBRACKET    = 'LBRAKET'
-T_RBRACKET    = 'RBRAKET'
 
 T_IDENTIFIER  = 'IDENTIFIER'
 
@@ -181,7 +179,7 @@ KEYWORDS = [
 	'or',
 	'not',
 	'IF',
-	'{',
+	'THEN',
 	'ELSE IF',
 	'ELSE',
 	'FOR',
@@ -299,13 +297,6 @@ class Lexer:
 			elif self.current_char == ']':
 				tokens.append(Token(T_RSQUARE, pos_start=self.pos))
 				self.advance()
-			elif self.current_char == '{':
-				tokens.append(Token(T_LBRACKET, pos_start=self.pos))
-				self.advance()
-			elif self.current_char == '{':
-				tokens.append(Token(T_RBRACKET, pos_start=self.pos))
-				self.advance()
-			
 			
 			else:
 				pos_start = self.pos.copy()
@@ -870,12 +861,11 @@ class Parser:
 		condition = res.register(self.expr())
 		if res.error: return res
 
-		if self.current_tok.type != T_LBRACKET:
-				return res.failure(InvalidSyntaxError(
+		if not self.current_tok.matches(T_KEYWORD, 'THEN'):
+			return res.failure(InvalidSyntaxError(
 				self.current_tok.pos_start, self.current_tok.pos_end,
-				f"Expected '{{'}}"
-				))
-
+				f"Expected 'THEN'"
+			))
 
 		res.register_advancement()
 		self.advance()
@@ -963,11 +953,11 @@ class Parser:
 		else:
 			step_value = None
 
-		if self.current_tok.type != T_LBRACKET:
-				return res.failure(InvalidSyntaxError(
+		if not self.current_tok.matches(T_KEYWORD, 'THEN'):
+			return res.failure(InvalidSyntaxError(
 				self.current_tok.pos_start, self.current_tok.pos_end,
-				f"Expected '{{'}}"
-				))
+				f"Expected 'THEN'"
+			))
 
 		res.register_advancement()
 		self.advance()
@@ -1010,11 +1000,11 @@ class Parser:
 		condition = res.register(self.expr())
 		if res.error: return res
 
-		if self.current_tok.type != T_LBRACKET:
-				return res.failure(InvalidSyntaxError(
+		if not self.current_tok.matches(T_KEYWORD, 'THEN'):
+			return res.failure(InvalidSyntaxError(
 				self.current_tok.pos_start, self.current_tok.pos_end,
-				f"Expected '{{'}}"
-				))
+				f"Expected 'THEN'"
+			))
 
 		res.register_advancement()
 		self.advance()
