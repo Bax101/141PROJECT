@@ -1351,8 +1351,13 @@ class Parser:
 			res.register_advancement()
 			self.advance()
 			expr = res.register(self.expr())
-			print(type(expr))
-			if res.error or type(expr) != NumberNode: return res
+			if res.error: return res
+			elif type(expr) != NumberNode: 
+				print()
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected an Integer"
+				))
 			return res.success(VarAssignNode(var_name, expr))
 		
 		############Decimal
@@ -1379,8 +1384,13 @@ class Parser:
 			res.register_advancement()
 			self.advance()
 			expr = res.register(self.expr())
-			print(type(expr))
-			if res.error or type(expr) != FloatNode: return res
+			if res.error: return res
+			elif type(expr) != FloatNode and type(expr) != NumberNode : 
+				print()
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected a Deimal value"
+				))
 			return res.success(VarAssignNode(var_name, expr))
 		
 		############Word
@@ -1408,7 +1418,13 @@ class Parser:
 			self.advance()
 			expr = res.register(self.expr())
 			print(type(expr))
-			if res.error or type(expr) != StringNode: return res
+			if res.error: return res
+			elif type(expr) != StringNode and type(expr) != CharNode : 
+				print()
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected a String Value"
+				))
 			return res.success(VarAssignNode(var_name, expr))
 
 		########## Character
@@ -1435,8 +1451,13 @@ class Parser:
 			res.register_advancement()
 			self.advance()
 			expr = res.register(self.expr())
-			print(type(expr))
-			if res.error or type(expr) != CharNode: return res
+			if res.error: return res
+			elif type(expr) != CharNode: 
+				print()
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected a Character"
+				))
 			return res.success(VarAssignNode(var_name, expr))
 		
 		############BOOLEAN
@@ -1463,8 +1484,13 @@ class Parser:
 			res.register_advancement()
 			self.advance()
 			expr = res.register(self.expr())
-			print(type(expr))
-			if res.error or type(expr) != BoolNode: return res
+			if res.error: return res
+			elif type(expr) != BoolNode : 
+				print()
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected a Boolean value (TRUE or FALSE)"
+				))
 			return res.success(VarAssignNode(var_name, expr))
 
 		node = res.register(self.bin_op(self.comp_expr, ((T_KEYWORD, 'and'),(T_KEYWORD, 'or'))))
