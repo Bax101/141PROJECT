@@ -134,6 +134,7 @@ T_NUM         = 'NUM'
 T_FLOAT       = 'FLOAT'
 T_STRING      = 'STRING'
 T_CHAR        = 'CHARACTER'
+T_BOOL				= 'BOOLEAN'
 
 
 T_PLUS     	  = 'PLUS'
@@ -169,12 +170,17 @@ T_NEWLINE     = 'NEWLINE'
 T_EOF         = 'EOF'
 
 ###################################
+BOOLEAN_KEYWORDS = [
+	'TRUE',
+	'FALSE'
+]
 
 KEYWORDS = [
 	'INTEGER',
 	'DECIMAL',
 	'WORD',
 	'CHARACTER',
+	'BOOLEAN',
 	'and',
 	'or',
 	'not',
@@ -343,7 +349,14 @@ class Lexer:
 			id_str += self.current_char
 			self.advance()
 
-		tok_type = T_KEYWORD if id_str in KEYWORDS else T_IDENTIFIER
+		 
+		if id_str in KEYWORDS:
+			tok_type = T_KEYWORD
+		elif id_str in BOOLEAN_KEYWORDS:
+			tok_type = T_BOOL
+		else:
+			tok_type = T_IDENTIFIER
+			
 		return Token(tok_type, id_str, pos_start, self.pos)
 	
 	def make_not_equals(self):
@@ -486,6 +499,14 @@ class CharNode:
 
 		self.pos_start = self.tok.pos_start
 		self.pos_end = self.tok.pos_end
+
+class BoolNode:
+	def __init__(self, tok):
+		self.tok = tok
+
+		self.pos_start = self.tok.pos_start
+		self.pos_end = self.tok.pos_end
+
 
 	def __repr__(self):
 		return f'{self.tok}'
@@ -1203,6 +1224,11 @@ class Parser:
 			res.register_advancement()
 			self.advance()
 			return res.success(CharNode(tok))
+		
+		if tok.type == T_BOOL:
+			res.register_advancement()
+			self.advance()
+			return res.success(BoolNode(tok))
 
 		elif tok.type == T_IDENTIFIER:
 			res.register_advancement()
@@ -1411,6 +1437,34 @@ class Parser:
 			expr = res.register(self.expr())
 			print(type(expr))
 			if res.error or type(expr) != CharNode: return res
+			return res.success(VarAssignNode(var_name, expr))
+		
+		############BOOLEAN
+		if self.current_tok.matches(T_KEYWORD, 'BOOLEAN'):
+			res.register_advancement()
+			self.advance()
+
+			if self.current_tok.type != T_IDENTIFIER:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected identifier"
+				))
+
+			var_name = self.current_tok
+			res.register_advancement()
+			self.advance()
+
+			if self.current_tok.type != T_EQ:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected '='"
+				))
+
+			res.register_advancement()
+			self.advance()
+			expr = res.register(self.expr())
+			print(type(expr))
+			if res.error or type(expr) != BoolNode: return res
 			return res.success(VarAssignNode(var_name, expr))
 
 		node = res.register(self.bin_op(self.comp_expr, ((T_KEYWORD, 'and'),(T_KEYWORD, 'or'))))
@@ -2287,6 +2341,11 @@ class Interpreter:
 		)
 
 	def visit_CharNode(self, node, context):
+		return RTResult().success(
+			String(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
+		)
+
+	def visit_BoolNode(self, node, context):
 		return RTResult().success(
 			String(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
 		)

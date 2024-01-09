@@ -1,3 +1,3 @@
-INTEGER x = 5
+BOOLEAN x = TRUE
 print(x)
 
